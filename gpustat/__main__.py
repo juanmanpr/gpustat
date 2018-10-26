@@ -9,6 +9,7 @@ from blessings import Terminal
 
 from gpustat import __version__
 from .core import GPUStatCollection
+from .docker_utils import get_name_and_pids, get_container_name
 
 
 def print_gpustat(json=False, debug=False, **kwargs):
@@ -30,6 +31,15 @@ def print_gpustat(json=False, debug=False, **kwargs):
                 # as a workaround, simply re-throw the exception
                 raise e
         sys.exit(1)
+
+    pids_and_names = get_name_and_pids()
+    for gpu in gpu_stats.gpus:
+        if gpu.processes is None:
+            continue
+        for proc in gpu.processes:
+            proc['username'] = get_container_name(proc['pid'],
+                                                  pids_and_names,
+                                                  proc['username'])
 
     if json:
         gpu_stats.print_json(sys.stdout)
