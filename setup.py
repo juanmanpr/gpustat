@@ -27,6 +27,7 @@ install_requires = [
     'nvidia-ml-py>=7.352.0' if IS_PY_2 else 'nvidia-ml-py3>=7.352.0',
     'psutil',
     'blessings>=1.6',
+    'docker'
 ]
 
 tests_requires = [
