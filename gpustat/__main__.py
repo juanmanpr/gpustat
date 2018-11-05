@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import sys
 import time
+import pickle
 
 from blessings import Terminal
 
@@ -12,39 +13,48 @@ from .core import GPUStatCollection
 from .docker_utils import get_name_and_pids, get_container_name
 
 
-def print_gpustat(json=False, debug=False, **kwargs):
+def print_gpustat(json=False, debug=False,
+                  pickle_dump='', pickle_load='', **kwargs):
     '''
     Display the GPU query results into standard output.
     '''
-    try:
-        gpu_stats = GPUStatCollection.new_query()
-    except Exception as e:
-        sys.stderr.write('Error on querying NVIDIA devices.'
-                         ' Use --debug flag for details\n')
-        if debug:
-            try:
-                import traceback
-                traceback.print_exc(file=sys.stderr)
-            except Exception:
-                # NVMLError can't be processed by traceback:
-                #   https://bugs.python.org/issue28603
-                # as a workaround, simply re-throw the exception
-                raise e
-        sys.exit(1)
-
-    pids_and_names = get_name_and_pids()
-    for gpu in gpu_stats.gpus:
-        if gpu.processes is None:
-            continue
-        for proc in gpu.processes:
-            proc['username'] = get_container_name(proc['pid'],
-                                                  pids_and_names,
-                                                  proc['username'])
-
-    if json:
-        gpu_stats.print_json(sys.stdout)
+    if pickle_load:
+        with open(pickle_load, 'rb') as f:
+            gpu_stats = pickle.load(f)
     else:
-        gpu_stats.print_formatted(sys.stdout, **kwargs)
+        try:
+            gpu_stats = GPUStatCollection.new_query()
+        except Exception as e:
+            sys.stderr.write('Error on querying NVIDIA devices.'
+                             ' Use --debug flag for details\n')
+            if debug:
+                try:
+                    import traceback
+                    traceback.print_exc(file=sys.stderr)
+                except Exception:
+                    # NVMLError can't be processed by traceback:
+                    #   https://bugs.python.org/issue28603
+                    # as a workaround, simply re-throw the exception
+                    raise e
+            sys.exit(1)
+
+        pids_and_names = get_name_and_pids()
+        for gpu in gpu_stats.gpus:
+            if gpu.processes is None:
+                continue
+            for proc in gpu.processes:
+                proc['username'] = get_container_name(proc['pid'],
+                                                      pids_and_names,
+                                                      proc['username'])
+
+    if pickle_dump:
+        with open(pickle_dump, 'wb') as f:
+            pickle.dump(gpu_stats, f)
+    else:
+        if json:
+            gpu_stats.print_json(sys.stdout)
+        else:
+            gpu_stats.print_formatted(sys.stdout, **kwargs)
 
 
 def main(*argv):
@@ -91,6 +101,15 @@ def main(*argv):
     parser.add_argument(
         '--gpuname-width', type=int, default=16,
         help='The minimum column width of GPU names, defaults to 16'
+    )
+    parser.add_argument(
+        '--pickle-dump', type=str, default='',
+        help='Dump the results in a pickle file instead of displaying them.'
+    )
+    parser.add_argument(
+        '--pickle-load', type=str, default='',
+        help='Read the gpu stats from a pickle file instead '
+             'of fetching them with nvidia-smi.'
     )
     parser.add_argument(
         '--debug', action='store_true', default=False,
