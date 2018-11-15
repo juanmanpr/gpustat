@@ -1,4 +1,4 @@
-FROM nvidia/cuda:9.0-devel-ubuntu16.04 as base
+FROM nvidia/cuda:9.0-runtime as base
 
 # apt-get stuff goes here
 RUN apt-get update &&  \
