@@ -5,10 +5,7 @@ RUN echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/force_yes
 RUN apt-get update &&  \
     apt-get install build-essential cmake \
     git curl wget \
-    gcc clang gdb valgrind \
-    emacs-nox ca-certificates \
-    openjdk-8-jdk \
-    tzdata && \
+    gcc clang gdb valgrind && \
     rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------------------------------------
