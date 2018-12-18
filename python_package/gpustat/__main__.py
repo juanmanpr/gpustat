@@ -10,7 +10,8 @@ from blessings import Terminal
 
 from gpustat import __version__
 from .core import GPUStatCollection
-from .docker_utils import get_name_and_pids, get_container_name
+from .docker_utils import get_name_and_pids_method1, get_container_name_method1
+from .docker_utils import get_name_and_pids_method2, get_container_name_method2
 
 
 def print_gpustat(json=False, debug=False,
@@ -38,14 +39,18 @@ def print_gpustat(json=False, debug=False,
                     raise e
             sys.exit(1)
 
-        pids_and_names = get_name_and_pids()
+        pids_and_names1 = get_name_and_pids_method1()
+        pids_and_names2 = get_name_and_pids_method2()
         for gpu in gpu_stats.gpus:
             if gpu.processes is None:
                 continue
             for proc in gpu.processes:
-                proc['username'] = get_container_name(proc['pid'],
-                                                      pids_and_names,
-                                                      proc['username'])
+                proc['username'] = get_container_name_method1(proc['pid'],
+                                                              pids_and_names1,
+                                                              proc['username'])
+                proc['username'] = get_container_name_method2(proc['pid'],
+                                                              pids_and_names2,
+                                                              proc['username'])
 
     if pickle_dump:
         with open(pickle_dump, 'wb') as f:
